@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 
 # imports from my files
 from bot import Bot
-from config import START_URL
+from config import START_URL, PROJECT_NAME
 
 from convert_data import *
 from clean_data import *
@@ -14,9 +14,10 @@ from pprint import pprint
 
 def main():
     url = START_URL
-    bot = Bot(url)
+    bot = Bot(url, PROJECT_NAME)
     # response = requests.get(url)
-    response = str(bot.html_page_load_js())
+    # response = str(bot.html_page_load_js())
+    response = str(bot.start_bot())
     soup = BeautifulSoup(response, 'html.parser')
 
     match_ids = get_match_ids(soup)
