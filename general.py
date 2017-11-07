@@ -2,6 +2,7 @@ import os
 
 from config import BASE_DIR, PROJECT_NAME
 
+
 def create_project_dir(project_name):
     '''Create a project forlder/directory'''
     search_dir = os.path.join(BASE_DIR, project_name)
@@ -22,19 +23,19 @@ def create_data_files(project_name, base_url):
         print('file succses created: {}'.format(queue))
 
     if not os.path.isfile(crawled):
-        write_data_to_file(crawled, '\n')
+        write_data_to_file(crawled, '')
         print('file succses created: {}'.format(crawled))
 
 
 def write_data_to_file(path, data):
     ''' write data a file'''
     with open(path, 'w') as file:
-        file.write(data)
+        file.write('{}\n'.format(data))
 
 
 def append_data_to_file(path, data):
     with open(path, 'a') as file:
-        file.write('\n'.format(data))
+        file.write('{}\n'.format(data))
 
 
 def file_to_list(path):
@@ -50,7 +51,17 @@ def delete_data_from_file():
     pass
 
 
-if __name__ == '__main__':
-    create_project_dir(PROJECT_NAME)
-    create_data_files(PROJECT_NAME, 'www.test.com')
-    print(file_to_list('PARSER/queue.txt'))
+def param_change_agent():
+    proxy_path = os.path.join(BASE_DIR, 'proxy.txt')
+    user_agent_path = os.path.join(BASE_DIR, 'user-agent.txt')
+    resolution_path = os.path.join(BASE_DIR, 'resolutions.txt')
+
+    def _open(path):
+        with open(path) as f:
+            return f.read().split('\n')[:-1]
+
+    proxy = _open(proxy_path)
+    user_agent = _open(user_agent_path)
+    resolutions = _open(resolution_path)
+
+    return proxy, user_agent, resolutions

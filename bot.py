@@ -1,12 +1,17 @@
 from selenium import webdriver
 from time import sleep
+from random import choice
 
-from general import *
+from general import (
+    create_project_dir,
+    create_data_files,
+    file_to_list,
+    param_change_agent,
+)
 
 class Bot():
 
     COUNT = 0
-    BOT_NAME = 'BOT_NAME_{}'
 
     start_url = ''
     queue_file = ''
@@ -15,11 +20,11 @@ class Bot():
     crawled = ''
 
     def __init__(self, start_url, project_name):
-        self.driver = webdriver.Firefox()
+        self.driver = self.setup_bot()
         self.start_url = start_url
 
-        Bot.BOT_NAME = Bot.BOT_NAME.format(Bot.COUNT)
-        Bot.COUNT += 1
+        Bot.COUNT = Bot.COUNT + 1
+        self.BOT_NAME = 'BOT_NAME_{}'.format(Bot.COUNT)
 
         Bot.start_url = start_url
         Bot.project_name = project_name
@@ -27,6 +32,33 @@ class Bot():
         Bot.crawled_file = '{}{}'.format(Bot.project_name, '/crawled.txt')
 
         self.boot()
+
+    def setup_bot(self):
+        # http://www.seleniumhq.org/docs/03_webdriver.jsp
+        # http://www.seleniumhq.org/docs/04_webdriver_advanced.jsp
+        # https://stackoverflow.com/questions/2887978/webdriver-and-proxy-server-for-firefox#5166310
+
+        proxy, user_agents, resolutions = param_change_agent()
+        resolutions = [
+            list(map(lambda x: int(x), i.split(','))) for i in resolutions
+        ]
+
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference(
+            "general.useragent.override",
+            choice(user_agents)
+        )
+
+        # profile.set_preference("network.proxy.type", 1)
+        # profile.set_preference("network.proxy.http", "85.90.199.59")
+        # profile.set_preference("network.proxy.http_port", 53281)
+
+        driver = webdriver.Firefox(profile)
+        print(*choice(resolutions))
+
+        driver.set_window_size( *choice(resolutions) )
+
+        return driver
 
     def start_bot(self):
         self.driver.get(self.start_url)
