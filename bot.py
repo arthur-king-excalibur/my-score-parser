@@ -9,6 +9,7 @@ from general import (
     param_change_agent,
 )
 
+
 class Bot():
 
     COUNT = 0
@@ -54,9 +55,8 @@ class Bot():
         # profile.set_preference("network.proxy.http_port", 53281)
 
         driver = webdriver.Firefox(profile)
-        print(*choice(resolutions))
 
-        driver.set_window_size( *choice(resolutions) )
+        driver.set_window_size(*choice(resolutions))
 
         return driver
 
