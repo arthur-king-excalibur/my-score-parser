@@ -7,12 +7,14 @@ from config import START_URL, PROJECT_NAME
 from convert_data import *
 from clean_data import *
 from general import *
+from models import get_db, insert_html_db
 
 
 # ВРЕМЕННО
 from pprint import pprint
 
-bot = Bot(START_URL, PROJECT_NAME)
+
+
 
 def create_url_list(bot):
 
@@ -29,19 +31,55 @@ def create_url_list(bot):
 
     bot.queue = file_to_list(bot.queue_file)
 
-    # pprint(convert_match_ids_to_url(match_ids))
-
     return soup, bot 	# for debug
-    # tornament_id = get_tornament_id(soup)
-    # print(tornament_id)
 
-def get_html(soup, response):
-    pass
+
+
+def html_to_db(bot):
+    print('BOT NUMBER: ', bot.COUNT)
+    global x
+    for _ in range(38):
+        if x <= x_len:
+            res = bot.crawl_page(bot.queue[x])
+            res_1 = bot.crawl_page(bot.queue[x + 1])
+            print(bot.queue[x])
+
+            res = {'html': {
+                'match-summary': res,
+                'odds-comparison': res_1}
+            }
+
+            db = get_db()
+            insert_html_db(db, res)
+            print('{} успешно записанно в базу | выполнено {} %'.format(
+                x, x / x_len * 100)
+            )
+            x += 2
+        else:
+            print('Все завершено успешно!')
+            break
+            # sys.exit
+    return True
+
+
+def create_new_bot(bot):
+    bot.turn_off_bot()
+    for _ in range(20):
+        _bot = Bot.new_bot()
+        print('------CREATE---BOT----')
+        html_to_db(_bot)
+        _bot.turn_off_bot()
+        print('--------DIE----BOT----')
+    return True
 
 
 if __name__ == '__main__':
-    ss, bb = create_url_list(bot)
-    from bs4 import BeautifulSoup as bs
+    bot = Bot(START_URL, PROJECT_NAME)
+    # ss, bb = create_url_list(bot)
+
+    # x, x_len = 1, len(bot.queue)
+    # print('x_len: ', x_len)
+    # create_new_bot(bot)
 
     from ipdb import set_trace; set_trace()
 
@@ -60,6 +98,6 @@ if __name__ == '__main__':
 
     with update = true
 
-    user aget -> 1 bot 
+    user aget -> 1 bot
     new crawl -> new random ip
     '''
