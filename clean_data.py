@@ -1,5 +1,6 @@
 import re
 from functools import reduce
+from datetime import datetime
 
 
 def get_match_ids(soup):
@@ -42,25 +43,44 @@ def get_test_data(name):
         return soup
 
 
-def get_time_macth(soup):
-    pass
+def get_time_match(soup):
+    str_time = soup.find('td', {'id': 'utime'}).text
+    regex = re.compile(r'[0-9]+')
+    list_int_time = list(map(lambda x: int(x), regex.findall(str_time)))
+
+    time_ = datetime(
+        year=list_int_time[2],
+        month=list_int_time[1],
+        day=list_int_time[0],
+        hour=list_int_time[3],
+        minute=list_int_time[4]
+    )
+
+    return {'time_match': time_}
 
 
-def get_name_lig(soup):
-    name_lig = soup.find('div', {'class': 'fleft'}).text
+def get_name_league(soup):
+    name_leag = soup.find('div', {'class': 'fleft'}).text
     regex = re.compile(r'[А-яіІ:0-9-^ ]+')
-    str_name_lig = str(reduce(lambda x, y: x + y, regex.findall(name_lig)))
+    str_name_lig = str(reduce(lambda x, y: x + y, regex.findall(name_leag)))
 
     country = str_name_lig.split(':')[0]
-    leage = str_name_lig.split(':')[1].split('-')[0].strip()
+    league = str_name_lig.split(':')[1].split('-')[0].strip()
     round_ = str_name_lig.split(':')[1].split('-')[1].strip()
 
-    return country, leage, round_
+    return {'league': {
+            'country': country,
+            'league_name': league,
+            'round': round_
+                }
+            }
 
 
 def get_team_name(soup):
     names = soup.find_all('span', {'class': 'tname'})
-    return [name.text.strip() for name in names]
+    key_ = ['home_team', 'away_team']
+    value_ = [name.text.strip() for name in names]
+    return {'team_names': dict(zip(key_, value_))}
 
 
 def get_match_live_event(soup):
@@ -147,65 +167,130 @@ def get_match_live_event(soup):
         if event:
             events.append(event)
 
-    return events
-
-    # {'event': {
-    #     'goal': {
-    #         'time': 72,
-    #         'own_goal': True,
-    #         'is_penalty': False,
-    #         'name': 'NAME',
-    #         'team1': True,
-    #         'team2': False}
-    #     'card': {
-    #         'type': 'yellow'
-    #         'time': 33,
-    #         'name': 'NAME',
-    #         'team1': True,
-    #         'team2': False}
-    #     }
-    # }
+    return {'events': events}
 
 # https://www.myscore.ua/match/dA8vrGYR/#match-summary
 # https://www.myscore.ua/match/ruM6bx0E/#match-summary - автогол
 # https://www.myscore.ua/match/EoqJGsfr/#match-summary - не реализованный пеналь
 # https://www.myscore.ua/match/4Yrkjlp8/#match-summary - красная карточка
 
+
+def split_odds(result, regex=re.compile(r'[0-9.]+')):
+    result = regex.findall(result)    # -> ['2.05', '1.95']
+    if len(result) == 2:
+        result = {
+            'open_odd': result[0],
+            'close_odd': result[1]
+        }
+    else:
+        result = {
+            'open_odd': result[0],
+            'close_odd': result[0]
+        }
+
+    return result
+
+
 def get_1_x_2_odds(soup):
     odds = soup.find_all('span', {'class': 'odds-wrap'})
-    regex = re.compile(r'[0-9.]+')
     key = ['1', 'x', '2']
     odds_list = []
 
     for odd in odds:
         res = odd.get('eu')
         if res:
-            res = regex.findall(res)    # -> ['2.05', '1.95']
-            if len(res) == 2:
-                res = {
-                    'open_odd': res[0],
-                    'close_odd': res[1]
-                }
-            else:
-                res = {
-                    'open_odd': res[0],
-                    'close_odd': res[0]
-                }
+            odds_list.append(split_odds(res))
 
-            odds_list.append(res)
+    return {'1_x_2_odds': dict(zip(key, odds_list))}
 
-    return dict(zip(key, odds_list))
+
+def union_to_dict(update_dict_from_tupl):
+
+    result_dict = {}
+    for _dict in update_dict_from_tupl:
+        result_dict.update(_dict)
+
+    return result_dict
+
+
+def get_over_under_odds(soup):
+
+    full_table = soup.find('div', {'id': 'block-under-over-ft'})
+    keys = ("odds_ou_{}".format(i / 10) for i in range(5, 65, 10))
+
+    def find_odds_by_key(key, table):
+        odds = table.find('table', {'id': key}).find('tbody').find('tr')
+        odds_list = odds.find_all('span')
+
+        result_list = []
+        for odd in odds_list:
+            res = odd.get('eu')
+            if res:
+                dict_ = split_odds(res)
+                result_list.append(dict_)
+        return dict(zip(('over', 'under'), result_list))
+    # map(find_odds_by_key, keys)
+    return {
+        'over_under_odds': {key: find_odds_by_key(key, full_table) for key in keys}
+    }
+
+
+def get_asian_handicap_odds(soup):
+    list_table = soup.find_all('table', {'id': re.compile(r'odds_ah')})
+
+    gen_key = (table.get('id')for table in list_table)
+    # print(list(gen_key))
+
+    # generator
+    gen_doble_spans = (table.find('tr', {'class': 'odd'}).find_all(
+        'span', {'class': re.compile(r'odds-wrap')}
+    ) for table in list_table)
+
+    # spans = ((i for i in d_span) for d_span in gen_doble_spans)
+    # for d_span in spans:
+    #     for i in d_span:
+    #         print(i)
+
+    def clean_d_span(doble_span):
+        gen_span = (i for i in doble_span)
+
+        def clean_span(span):
+            span = span.get('eu')
+            if span:
+                dict_ = split_odds(span)
+                # result_list.append(dict_)
+            return dict_
+
+        return dict(zip(('team1', 'team2'), map(clean_span, gen_span)))
+
+    return {
+        'asian_handicaps': dict(zip(gen_key, (map(clean_d_span, gen_doble_spans))))
+    }
+
+
+def union_parse_pages(soup_1_page, soup_2_page):
+
+    update_tupl = (
+        get_time_match(soup_1_page),
+        get_name_league(soup_1_page),
+        get_team_name(soup_1_page),
+        get_match_live_event(soup_1_page),
+        get_1_x_2_odds(soup_1_page),
+
+        get_over_under_odds(soup_2_page),
+        get_asian_handicap_odds(soup_2_page)
+    )
+
+    return union_to_dict(update_tupl)
+
 
 if __name__ == '__main__':
 
-    soups = [
-        get_test_data('summary_test.html'),
-        get_test_data('summary_test1.html'),
-    ]
-    # get_name_lig(soup)
-    for soup in soups:
-        print(get_match_live_event(soup))
-        get_1_x_2_odds(soup)
-        print('~' * 80)
+    from pprint import pprint
+
+    soup1 = get_test_data('summary_test.html')
+    soup2 = get_test_data('summary_test2.html')
+
+    pprint(union_parse_pages(soup1, soup2))
 
     # from ipdb import set_trace; set_trace()
