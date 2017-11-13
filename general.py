@@ -1,36 +1,39 @@
 import os
 
-from config import BASE_DIR, PROJECT_NAME
+from config import BASE_DIR
+from log import logger
 
 
 def create_project_dir(project_name):
     '''Create a project forlder/directory'''
     search_dir = os.path.join(BASE_DIR, project_name)
     if not os.path.exists(search_dir):
-        print('Creating project {}'.format(project_name))
+        logger.info('Creating project {}'.format(project_name))
         os.makedirs(search_dir)
 
 
-def create_data_files(project_name, base_url):
+def create_data_files(project_name):
     '''
     Create queue and crawled files (if not created)
     '''
     queue = '{}{}'.format(project_name, '/queue.txt')
     crawled = '{}{}'.format(project_name, '/crawled.txt')
+    restore = '{}{}'.format(project_name, '/restore.txt')
 
-    if not os.path.isfile(queue):
-        write_data_to_file(queue, base_url)
-        print('file succses created: {}'.format(queue))
+    def _creator(path_file):
+        if not os.path.isfile(path_file):
+            create_file(path_file)
+            logger.info('file succses created: {}'.format(path_file))
 
-    if not os.path.isfile(crawled):
-        write_data_to_file(crawled, '')
-        print('file succses created: {}'.format(crawled))
+    _creator(queue)
+    _creator(crawled)
+    _creator(restore)
 
 
-def write_data_to_file(path, data):
+def create_file(path):
     ''' write data a file'''
     with open(path, 'w') as file:
-        file.write('{}\n'.format(data))
+        file.write('')
 
 
 def append_data_to_file(path, data):
@@ -47,8 +50,33 @@ def file_to_list(path):
     return results_list
 
 
-def delete_data_from_file():
-    pass
+def append_list_to_file(path, list_data, to_new_file=False):
+    key = 'a'
+    if to_new_file:
+        key = 'w'
+
+    with open(path, key) as f:
+        for i in list_data:
+            f.write('{}\n'.format(i))
+
+
+def create_restore_file(path_queue_file, path_crawled_file, path_restore_file):
+    queue_set = set(_open(path_queue_file))
+    crawled_set = set(_open(path_crawled_file))
+
+    restore_queue = list(queue_set - crawled_set)
+    append_list_to_file(
+        path_restore_file,
+        restore_queue,
+        to_new_file=True
+    )
+
+    return 'restore file created'
+
+
+def _open(path):
+    with open(path) as f:
+        return f.read().split('\n')[:-1]
 
 
 def param_change_agent():
@@ -56,12 +84,16 @@ def param_change_agent():
     user_agent_path = os.path.join(BASE_DIR, 'user-agent.txt')
     resolution_path = os.path.join(BASE_DIR, 'resolutions.txt')
 
-    def _open(path):
-        with open(path) as f:
-            return f.read().split('\n')[:-1]
 
     proxy = _open(proxy_path)
     user_agent = _open(user_agent_path)
     resolutions = _open(resolution_path)
 
     return proxy, user_agent, resolutions
+
+
+if __name__ == '__main__':
+    file1='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/queue.txt'
+    file2='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/crawled.txt'
+
+    create_restore_file(file1, file2)
