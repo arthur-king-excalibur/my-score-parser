@@ -1,7 +1,7 @@
 import os
 
-from config import BASE_DIR
-from log import logger
+from .config import BASE_DIR, PROJECT_NAME
+from .log import logger
 
 
 def create_project_dir(project_name):
@@ -86,7 +86,6 @@ def param_change_agent():
     user_agent_path = os.path.join(BASE_DIR, 'user-agent.txt')
     resolution_path = os.path.join(BASE_DIR, 'resolutions.txt')
 
-
     proxy = _open(proxy_path)
     user_agent = _open(user_agent_path)
     resolutions = _open(resolution_path)
@@ -95,7 +94,8 @@ def param_change_agent():
 
 
 if __name__ == '__main__':
-    file1='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/queue.txt'
-    file2='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/crawled.txt'
+    # file1='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/queue.txt'
+    # file2='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/crawled.txt'
 
-    create_restore_file(file1, file2)
+    # create_restore_file(file1, file2)
+    create_project_dir(PROJECT_NAME)

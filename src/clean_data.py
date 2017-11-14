@@ -2,7 +2,7 @@ import re
 from functools import reduce
 from datetime import datetime
 
-from log import logger
+from .log import logger
 
 
 def get_match_ids(soup):

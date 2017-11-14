@@ -1,13 +1,13 @@
 from bs4 import BeautifulSoup
 
 # imports from my files
-from bot import Bot
-from config import START_URL, PROJECT_NAME
-from clean_data import get_match_ids, union_parse_pages
-from models import get_db, insert_html_db, insert_to_football_db
-from log import logger
+from src.bot import Bot
+from src.config import START_URL, PROJECT_NAME
+from src.clean_data import get_match_ids, union_parse_pages
+from src.models import get_db, insert_html_db, insert_to_football_db
+from src.log import logger
 
-from general import *
+from src.general import *
 
 
 def create_match_ids_list(bot):
@@ -62,7 +62,7 @@ def new_bot_soups(bot, _id):
 
 def main(bot):
 
-    NUM = bot.queue
+    NUM = bot.queue[:2]
     LEN_NUM = len(NUM)
     BOT_LIVES = 50
     logger.debug('all pair_urls:', LEN_NUM)
@@ -88,6 +88,7 @@ def main(bot):
             db = get_db()
             insert_to_football_db(db, data_to_db)
             logger.info('data write to db')
+        bot.turn_off_bot()
     except AttributeError as e:
         logger.exception(e)
         logger.info('error match_id:', _id)
