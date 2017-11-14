@@ -2,6 +2,8 @@ import re
 from functools import reduce
 from datetime import datetime
 
+from log import logger
+
 
 def get_match_ids(soup):
     filter_list = soup.find_all('tr')
@@ -177,15 +179,23 @@ def get_match_live_event(soup):
 
 def split_odds(result, regex=re.compile(r'[0-9.]+')):
     result = regex.findall(result)    # -> ['2.05', '1.95']
-    if len(result) == 2:
+
+    try:
+        if len(result) == 2:
+            result = {
+                'open_odd': result[0],
+                'close_odd': result[1]
+            }
+        else:
+            result = {
+                'open_odd': result[0],
+                'close_odd': result[0]
+            }
+    except IndexError as e:
+        logger.exception('ERROR func split_odds {}'.format(e))
         result = {
-            'open_odd': result[0],
-            'close_odd': result[1]
-        }
-    else:
-        result = {
-            'open_odd': result[0],
-            'close_odd': result[0]
+            'open_odd': 'not_data',
+            'close_odd': 'not_data'
         }
 
     return result
@@ -231,14 +241,14 @@ def get_over_under_odds(soup):
         return dict(zip(('over', 'under'), result_list))
     # map(find_odds_by_key, keys)
     return {
-        'over_under_odds': {key: find_odds_by_key(key, full_table) for key in keys}
+        'over_under_odds': {key.replace('.', '_'): find_odds_by_key(key, full_table) for key in keys}
     }
 
 
 def get_asian_handicap_odds(soup):
     list_table = soup.find_all('table', {'id': re.compile(r'odds_ah')})
 
-    gen_key = (table.get('id')for table in list_table)
+    gen_key = (table.get('id').replace('.', '_') for table in list_table)
     # print(list(gen_key))
 
     # generator

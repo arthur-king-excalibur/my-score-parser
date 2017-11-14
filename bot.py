@@ -5,9 +5,9 @@ from random import choice
 from general import (
     create_project_dir,
     create_data_files,
-    file_to_list,
     param_change_agent,
 )
+from log import logger
 
 
 class Bot():
@@ -15,8 +15,10 @@ class Bot():
     COUNT = 0
 
     start_url = ''
+    # ----START FROM FILE--------
     queue_file = ''
     crawled_file = ''
+    restore_file = ''
     queue = ''
     crawled = ''
 
@@ -31,8 +33,12 @@ class Bot():
         Bot.project_name = project_name
         Bot.queue_file = '{}{}'.format(Bot.project_name, '/queue.txt')
         Bot.crawled_file = '{}{}'.format(Bot.project_name, '/crawled.txt')
+        Bot.restore_file = '{}{}'.format(Bot.project_name, '/restore.txt')
 
         self.boot()
+
+    def __repr__(self):
+        return 'Bot number: {}'.format(Bot.COUNT)
 
     def setup_bot(self):
         # http://www.seleniumhq.org/docs/03_webdriver.jsp
@@ -76,26 +82,24 @@ class Bot():
         while not error:
             try:
                 res.click()
-                sleep(0.5)
+                sleep(1)
             except BaseException:
+                logger.exception('i know about it!')
                 error = True
-                print('=' * 80)
-                print('load script data')
-
+                logger.debug('load script data')
 
     def html_page_load_js(self):
+        sleep(1)
         return self.driver.page_source
 
     @staticmethod
     def boot():
         create_project_dir(Bot.project_name)
-        create_data_files(Bot.project_name, Bot.start_url)
-        Bot.queue = file_to_list(Bot.queue_file)
-        Bot.crawled = file_to_list(Bot.crawled_file)
+        create_data_files(Bot.project_name)
 
     def crawl_page(self, url):
         self.driver.get(url)
-        sleep(0.5)
+        sleep(1.5)
         return self.driver.page_source
 
     def turn_off_bot(self):

@@ -3,17 +3,34 @@ from bs4 import BeautifulSoup
 # imports from my files
 from bot import Bot
 from config import START_URL, PROJECT_NAME
+from clean_data import get_match_ids, union_parse_pages
+from models import get_db, insert_html_db, insert_to_football_db
+from log import logger
 
-from convert_data import *
-from clean_data import *
 from general import *
-from models import get_db, insert_html_db
 
 
-# ВРЕМЕННО
-from pprint import pprint
+def create_match_ids_list(bot):
+    response = str(bot.start_bot())
+
+    soup = BeautifulSoup(response, 'html.parser')
+
+    bot.queue = get_match_ids(soup)
+
+    return True
 
 
+def get_soup(bot, url):
+    response = bot.crawl_page(url)
+    return BeautifulSoup(str(response), 'html.parser')
+
+
+def url_mask(_id):
+    mask = (
+        'http://www.myscore.ua/match/{}/#match-summary'.format(_id),
+        'http://www.myscore.ua/match/{}/#odds-comparison;1x2-odds;full-time'.format(_id)
+    )
+    return mask
 
 
 def create_url_list(bot):
@@ -34,54 +51,79 @@ def create_url_list(bot):
     return soup, bot 	# for debug
 
 
+def new_bot_soups(bot, _id):
+    res = url_mask(_id)
 
-def html_to_db(bot):
-    print('BOT NUMBER: ', bot.COUNT)
-    global x
-    for _ in range(38):
-        if x <= x_len:
-            res = bot.crawl_page(bot.queue[x])
-            res_1 = bot.crawl_page(bot.queue[x + 1])
-            print(bot.queue[x])
+    return (
+        get_soup(bot, res[0]),
+        get_soup(bot, res[1])
+    )
 
-            res = {'html': {
-                'match-summary': res,
-                'odds-comparison': res_1}
-            }
 
+def main(bot):
+
+    NUM = bot.queue
+    LEN_NUM = len(NUM)
+    BOT_LIVES = 50
+    logger.debug('all pair_urls:', LEN_NUM)
+
+    try:
+        for i, _id in enumerate(NUM):
+            if i % BOT_LIVES == 0:
+                logger.debug(bot)
+                bot.turn_off_bot()
+                logger.debug('DIE BOT')
+                bot = Bot.new_bot()
+                logger.debug('NEW {}'.format(bot))
+
+            bot_soups = new_bot_soups(bot, _id)
+            data_to_db = union_parse_pages(*bot_soups)
+            data_to_db.update({'myscore_id': _id})
+            append_data_to_file(bot.crawled_file, _id)
+
+            logger.info('crawl_url: \n{}, \n{}'.format(*url_mask(_id)))
+            logger.info('complite on: {} %'.format((i + 1) / LEN_NUM * 100))
+
+            # write data to db
             db = get_db()
-            insert_html_db(db, res)
-            print('{} успешно записанно в базу | выполнено {} %'.format(
-                x, x / x_len * 100)
-            )
-            x += 2
-        else:
-            print('Все завершено успешно!')
-            break
-            # sys.exit
-    return True
+            insert_to_football_db(db, data_to_db)
+            logger.info('data write to db')
+    except AttributeError as e:
+        logger.exception(e)
+        logger.info('error match_id:', _id)
+
+        create_restore_file(
+            path_queue_file=bot.queue_file,
+            path_crawled_file=bot.crawled_file,
+            path_restore_file=bot.restore_file
+        )
+
+        restore_main(bot)
+    finally:
+        create_restore_file(
+            path_queue_file=bot.queue_file,
+            path_crawled_file=bot.crawled_file,
+            path_restore_file=bot.restore_file
+        )
 
 
-def create_new_bot(bot):
-    bot.turn_off_bot()
-    for _ in range(20):
-        _bot = Bot.new_bot()
-        print('------CREATE---BOT----')
-        html_to_db(_bot)
-        _bot.turn_off_bot()
-        print('--------DIE----BOT----')
-    return True
+def restore_main(bot):
+    global COUNT_RESTARTS
+    COUNT_RESTARTS += 1
+    logger.debug('restart:', COUNT_RESTARTS)
+    bot.queue = file_to_list(bot.restore_file)
+    main(bot)
 
 
 if __name__ == '__main__':
+    COUNT_RESTARTS = 0
     bot = Bot(START_URL, PROJECT_NAME)
-    # ss, bb = create_url_list(bot)
+    create_match_ids_list(bot)    # bot.queue '\/'
+    append_list_to_file(bot.queue_file, bot.queue)   # write ids to file
+    main(bot)
+    # restore_main(bot)
 
-    # x, x_len = 1, len(bot.queue)
-    # print('x_len: ', x_len)
-    # create_new_bot(bot)
-
-    from ipdb import set_trace; set_trace()
+    # from ipdb import set_trace; set_trace()
 
     # https://duckduckgo.com/?q=beautify+html&t=lm&ia=answer
     # scrapy calback! scrapy hub - google?

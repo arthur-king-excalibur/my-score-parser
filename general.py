@@ -65,13 +65,15 @@ def create_restore_file(path_queue_file, path_crawled_file, path_restore_file):
     crawled_set = set(_open(path_crawled_file))
 
     restore_queue = list(queue_set - crawled_set)
+
     append_list_to_file(
         path_restore_file,
         restore_queue,
         to_new_file=True
     )
 
-    return 'restore file created'
+    logger.info('restore file created')
+    return True
 
 
 def _open(path):
