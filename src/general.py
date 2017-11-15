@@ -82,15 +82,13 @@ def _open(path):
 
 
 def param_change_agent():
-    proxy_path = os.path.join(BASE_DIR, 'proxy.txt')
     user_agent_path = os.path.join(BASE_DIR, 'user-agent.txt')
     resolution_path = os.path.join(BASE_DIR, 'resolutions.txt')
 
-    proxy = _open(proxy_path)
     user_agent = _open(user_agent_path)
     resolutions = _open(resolution_path)
 
-    return proxy, user_agent, resolutions
+    return user_agent, resolutions
 
 
 if __name__ == '__main__':

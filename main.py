@@ -1,20 +1,23 @@
 from bs4 import BeautifulSoup
+import click
 
 # imports from my files
 from src.bot import Bot
-from src.config import START_URL, PROJECT_NAME
+from src.config import START_URL, PROJECT_NAME, BOT_LIVES
 from src.clean_data import get_match_ids, union_parse_pages
-from src.models import get_db, insert_html_db, insert_to_football_db
+from src.models import get_db, insert_to_football_db
 from src.log import logger
-
-from src.general import *
+from src.general import (
+    append_data_to_file,
+    create_restore_file,
+    append_list_to_file,
+    file_to_list
+)
 
 
 def create_match_ids_list(bot):
     response = str(bot.start_bot())
-
     soup = BeautifulSoup(response, 'html.parser')
-
     bot.queue = get_match_ids(soup)
 
     return True
@@ -33,24 +36,6 @@ def url_mask(_id):
     return mask
 
 
-def create_url_list(bot):
-
-    response = str(bot.start_bot())
-
-    soup = BeautifulSoup(response, 'html.parser')
-
-    match_ids = get_match_ids(soup)
-    pair_urls = convert_match_ids_to_url(match_ids)
-
-    for pair in pair_urls:
-        for url in pair:
-            append_data_to_file(bot.queue_file, url)
-
-    bot.queue = file_to_list(bot.queue_file)
-
-    return soup, bot 	# for debug
-
-
 def new_bot_soups(bot, _id):
     res = url_mask(_id)
 
@@ -62,14 +47,14 @@ def new_bot_soups(bot, _id):
 
 def main(bot):
 
-    NUM = bot.queue[:2]
+    NUM = bot.queue[:4]
     LEN_NUM = len(NUM)
-    BOT_LIVES = 50
-    logger.debug('all pair_urls:', LEN_NUM)
+
+    logger.debug('all pair_urls: {}'.format(LEN_NUM))
 
     try:
         for i, _id in enumerate(NUM):
-            if i % BOT_LIVES == 0:
+            if all([i % BOT_LIVES == 0, i != 0]):
                 logger.debug(bot)
                 bot.turn_off_bot()
                 logger.debug('DIE BOT')
@@ -89,18 +74,20 @@ def main(bot):
             insert_to_football_db(db, data_to_db)
             logger.info('data write to db')
         bot.turn_off_bot()
+
     except AttributeError as e:
+
         logger.exception(e)
         logger.info('error match_id:', _id)
-
         create_restore_file(
             path_queue_file=bot.queue_file,
             path_crawled_file=bot.crawled_file,
             path_restore_file=bot.restore_file
         )
-
         restore_main(bot)
+
     finally:
+
         create_restore_file(
             path_queue_file=bot.queue_file,
             path_crawled_file=bot.crawled_file,
@@ -109,38 +96,27 @@ def main(bot):
 
 
 def restore_main(bot):
-    global COUNT_RESTARTS
-    COUNT_RESTARTS += 1
-    logger.debug('restart:', COUNT_RESTARTS)
+    logger.debug('restart')
     bot.queue = file_to_list(bot.restore_file)
     main(bot)
 
 
+@click.command()
+@click.option('--start', default='no', help='Start script')
+@click.option('--restore', default='no', help='Restore script')
+@click.argument('url')
+@click.argument('progect_name')
+def run(start, restore, url, progect_name):
+
+    # bot = Bot(START_URL, PROJECT_NAME)
+    bot = Bot(url, progect_name)
+    if start == 'yes' and restore == 'no':
+        create_match_ids_list(bot)    # bot.queue '\/'
+        append_list_to_file(bot.queue_file, bot.queue)   # write ids to file
+        main(bot)
+    elif restore == 'yes' and start == 'no':
+        restore_main(bot)
+
+
 if __name__ == '__main__':
-    COUNT_RESTARTS = 0
-    bot = Bot(START_URL, PROJECT_NAME)
-    create_match_ids_list(bot)    # bot.queue '\/'
-    append_list_to_file(bot.queue_file, bot.queue)   # write ids to file
-    main(bot)
-    # restore_main(bot)
-
-    # from ipdb import set_trace; set_trace()
-
-    # https://duckduckgo.com/?q=beautify+html&t=lm&ia=answer
-    # scrapy calback! scrapy hub - google?
-    # print(dir(webdriver.Firefox))
-    # pythex.org тестим регулярные выражения
-    # gekodirver cp /usr/local/bin
-    # https://habrahabr.ru/post/235901/ sublime plugins
-
-    '''
-    https://losst.ru/ustanovka-docker-na-ubuntu-16-04
-    обязательно перед hello-world выполнить !!!
-    sudo service docker stop
-    sudo service docker start
-
-    with update = true
-
-    user aget -> 1 bot
-    new crawl -> new random ip
-    '''
+    run()

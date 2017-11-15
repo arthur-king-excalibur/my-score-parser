@@ -2,21 +2,18 @@ from selenium import webdriver
 from time import sleep
 from random import choice
 
-from .general import *
-# (
-#     create_project_dir,
-#     create_data_files,
-#     param_change_agent,
-# )
+from .general import (
+    create_project_dir,
+    create_data_files,
+    param_change_agent,
+)
 from .log import logger
 
 
 class Bot():
 
     COUNT = 0
-
     start_url = ''
-    # ----START FROM FILE--------
     queue_file = ''
     crawled_file = ''
     restore_file = ''
@@ -42,36 +39,24 @@ class Bot():
         return 'Bot number: {}'.format(Bot.COUNT)
 
     def setup_bot(self):
-        # http://www.seleniumhq.org/docs/03_webdriver.jsp
-        # http://www.seleniumhq.org/docs/04_webdriver_advanced.jsp
-        # https://stackoverflow.com/questions/2887978/webdriver-and-proxy-server-for-firefox#5166310
 
-        proxy, user_agents, resolutions = param_change_agent()
+        user_agents, resolutions = param_change_agent()
         resolutions = [
             list(map(lambda x: int(x), i.split(','))) for i in resolutions
         ]
-
         profile = webdriver.FirefoxProfile()
         profile.set_preference(
-            "general.useragent.override",
+            'general.useragent.override',
             choice(user_agents)
         )
-
-        # profile.set_preference("network.proxy.type", 1)
-        # profile.set_preference("network.proxy.http", "85.90.199.59")
-        # profile.set_preference("network.proxy.http_port", 53281)
-
         driver = webdriver.Firefox(profile)
-
         driver.set_window_size(*choice(resolutions))
 
         return driver
 
     def start_bot(self):
         self.driver.get(self.start_url)
-
         self.load_script_data()
-
         return self.html_page_load_js()
 
     def load_script_data(self):
@@ -110,5 +95,3 @@ class Bot():
     @classmethod
     def new_bot(cls):
         return cls(Bot.start_url, Bot.project_name)
-
-# bb.crawl_page(bb,'http://www.myscore.ua/match/OxCVYego/#odds-comparison;1x2-odds;full-time')
