@@ -1,7 +1,7 @@
 import os
 
-from .config import BASE_DIR, PROJECT_NAME
-from .log import logger
+from src.config import BASE_DIR, PROJECT_NAME
+from src.log import logger
 
 
 def create_project_dir(project_name):

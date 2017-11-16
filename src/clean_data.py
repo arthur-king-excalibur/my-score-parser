@@ -2,7 +2,7 @@ import re
 from functools import reduce
 from datetime import datetime
 
-from .log import logger
+from src.log import logger
 
 
 def get_match_ids(soup):
@@ -22,20 +22,6 @@ def get_match_ids(soup):
             result_list.append(clear_data(find_id))
 
     return result_list
-
-
-# ------------ Not used! ----------------
-def get_tornament_id(soup):
-    full_table = soup.find_all('script', {'type': 'text/javascript'})
-    search = "tournament_id = '"
-    len_search = len(search)
-
-    for i in full_table:
-        i = str(i)
-        x = i.find(search)
-        if x != -1:
-            res = i[x + len_search: x + len_search + 20]
-            return res[: res.find("'")]
 
 
 def get_test_data(name):
@@ -63,12 +49,11 @@ def get_time_match(soup):
 
 def get_name_league(soup):
     name_leag = soup.find('div', {'class': 'fleft'}).text
-    regex = re.compile(r'[А-яіІ:0-9-^ ]+')
+    regex = re.compile(r"[А-яіІ'єЄ:0-9-^ ]*")
     str_name_lig = str(reduce(lambda x, y: x + y, regex.findall(name_leag)))
-
     country = str_name_lig.split(':')[0]
-    league = str_name_lig.split(':')[1].split('-')[0].strip()
-    round_ = str_name_lig.split(':')[1].split('-')[1].strip()
+    league = str_name_lig.split(':')[1].split(' - ')[0].strip()
+    round_ = str_name_lig.split(':')[1].split(' - ')[1].strip()
 
     return {'league': {
             'country': country,
@@ -170,11 +155,6 @@ def get_match_live_event(soup):
             events.append(event)
 
     return {'events': events}
-
-# https://www.myscore.ua/match/dA8vrGYR/#match-summary
-# https://www.myscore.ua/match/ruM6bx0E/#match-summary - автогол
-# https://www.myscore.ua/match/EoqJGsfr/#match-summary - не реализованный пеналь
-# https://www.myscore.ua/match/4Yrkjlp8/#match-summary - красная карточка
 
 
 def split_odds(result, regex=re.compile(r'[0-9.]+')):
@@ -298,9 +278,12 @@ if __name__ == '__main__':
 
     from pprint import pprint
 
-    soup1 = get_test_data('summary_test.html')
-    soup2 = get_test_data('summary_test2.html')
+    soup1 = get_test_data('test/match_1_page_1.html')
+    soup2 = get_test_data('test/match_1_page_2.html')
 
-    pprint(union_parse_pages(soup1, soup2))
+    pprint(get_time_match(soup1))
+    pprint(get_name_league(soup1))
+
+    # pprint(union_parse_pages(soup1, soup2))
 
     # from ipdb import set_trace; set_trace()

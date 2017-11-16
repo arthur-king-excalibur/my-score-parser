@@ -2,12 +2,12 @@ from selenium import webdriver
 from time import sleep
 from random import choice
 
-from .general import (
+from src.general import (
     create_project_dir,
     create_data_files,
     param_change_agent,
 )
-from .log import logger
+from src.log import logger
 
 
 class Bot():
