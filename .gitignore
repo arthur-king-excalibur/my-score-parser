@@ -7,3 +7,5 @@ __pycache__/
 
 projects/
 help doc/
+
+test/
