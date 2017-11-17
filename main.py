@@ -47,7 +47,7 @@ def new_bot_soups(bot, _id):
 
 def main(bot):
 
-    NUM = bot.queue[:4]
+    NUM = bot.queue
     LEN_NUM = len(NUM)
 
     logger.debug('all pair_urls: {}'.format(LEN_NUM))
