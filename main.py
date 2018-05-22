@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 import click
 
-# imports from my files
 from src.bot import Bot
 from src.config import START_URL, PROJECT_NAME, BOT_LIVES
 from src.clean_data import get_match_ids, union_parse_pages
@@ -38,7 +37,6 @@ def url_mask(_id):
 
 def new_bot_soups(bot, _id):
     res = url_mask(_id)
-
     return (
         get_soup(bot, res[0]),
         get_soup(bot, res[1])
