@@ -92,8 +92,6 @@ def param_change_agent():
 
 
 if __name__ == '__main__':
-    # file1='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/queue.txt'
-    # file2='/home/main/python3/progect/work_ua/myscore_old/laliga_2016_2017/crawled.txt'
 
     # create_restore_file(file1, file2)
     create_project_dir(PROJECT_NAME)
