@@ -30,7 +30,6 @@ You can break running script any time, and restore project
 ```
 
 >## Uninstallation
-remove parser
 ```
 rm -r myscore-parser/
 ```
