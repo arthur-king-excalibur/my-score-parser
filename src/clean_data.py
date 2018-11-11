@@ -283,7 +283,3 @@ if __name__ == '__main__':
 
     pprint(get_time_match(soup1))
     pprint(get_name_league(soup1))
-
-    # pprint(union_parse_pages(soup1, soup2))
-
-    # from ipdb import set_trace; set_trace()
