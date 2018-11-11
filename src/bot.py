@@ -91,7 +91,7 @@ class Bot():
     def turn_off_bot(self):
         self.driver.quit()
 
-    # Создание класа бот другим способом
+    # The other way of creating bot
     @classmethod
     def new_bot(cls):
         return cls(Bot.start_url, Bot.project_name)
